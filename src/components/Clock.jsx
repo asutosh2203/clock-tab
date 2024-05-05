@@ -5,24 +5,107 @@ const Clock = () => {
   const [hours, setHours] = useState("00");
   const [minutes, setMinutes] = useState("00");
   const [seconds, setSeconds] = useState("00");
+  const [date, setDate] = useState("");
+  const [month, setMonth] = useState("");
+  const [day, setDay] = useState("");
+  const [meridian, setMeridian] = useState("");
+  const [timeFormat, setTimeFormat] = useState();
 
   let interval = useRef();
+  const daysOfWeek = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   const startTimer = () => {
     interval = setInterval(() => {
-      const now = new Date().getTime() + 19800000;
+      const dateObj = new Date();
+      const now =
+        dateObj.getTime() + -1 * dateObj.getTimezoneOffset() * 60 * 1000;
 
-      const hours = Math.floor(
-        (now % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      ).toString();
-      const minutes = Math.floor(
-        (now % (1000 * 60 * 60)) / (1000 * 60)
-      ).toString();
-      const seconds = Math.floor((now % (1000 * 60)) / 1000).toString();
+      // let hours = Math.floor(
+      //   (now % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      // ).toString();
+      // let minutes = Math.floor(
+      //   (now % (1000 * 60 * 60)) / (1000 * 60)
+      // ).toString();
+      // let seconds = Math.floor((now % (1000 * 60)) / 1000).toString();
 
-      setHours(hours);
-      setMinutes(minutes);
-      setSeconds(seconds);
+      // if (hours.length == 2) {
+      //   setHours(hours);
+      // } else {
+      //   setHours(`0${hours}`);
+      // }
+
+      // if (minutes.length == 2) {
+      //   setMinutes(minutes);
+      // } else {
+      //   setMinutes(`0${minutes}`);
+      // }
+
+      // if (seconds.length == 2) {
+      //   setSeconds(seconds);
+      // } else {
+      //   setSeconds(`0${seconds}`);
+      // }
+
+      const time = dateObj.toLocaleTimeString();
+
+      const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\s[AP]M)$/;
+
+      const match = time.match(timeRegex);
+
+      if (match) {
+        let hours = match[1];
+        const minutes = match[2];
+        const seconds = match[3];
+        const meridian = match[4];
+
+        if (timeFormat == 24) {
+          if (meridian.trim() == "AM") {
+            if (hours == "12") {
+              hours = "00";
+            }
+          }
+        }
+
+        setHours(hours);
+        setMinutes(minutes);
+        setSeconds(seconds);
+        setMeridian(meridian);
+      }
+
+      const day = dateObj.getDay();
+      setDay(daysOfWeek[day]);
+
+      const date = dateObj.getDate();
+      if (date.length == 2) {
+        setDate(date);
+      } else {
+        setDate(`0${date}`);
+      }
+
+      const month = dateObj.getMonth();
+      setMonth(months[month]);
     }, 1000);
   };
 
@@ -33,56 +116,64 @@ const Clock = () => {
     };
   }, []);
 
-  function convert12(str) {
-    var time = "";
-    // Get Hours
-    var h1 = Number(str[0] - "0");
-    var h2 = Number(str[1] - "0");
+  function tConvert(time) {
+    // Check correct time format and split into components
+    time = time
+      .toString()
+      .match(/^([01]\d|2[0-3])(:)([0-5]\d)(:[0-5]\d)?$/) || [time];
 
-    var hh = h1 * 10 + h2;
-
-    // Finding out the Meridien of time
-    // ie. AM or PM
-    var meridian;
-
-    if (hh < 12) {
-      meridian = "AM";
-    } else meridian = "PM";
-
-    hh %= 12;
-
-    // Handle 00 and 12 case separately
-    if (hh == 0) {
-      time += "12";
-
-      // Printing minutes and seconds
-      for (var i = 2; i < 8; ++i) {
-        time += str[i];
-      }
-    } else {
-      time += hh;
-      // Printing minutes and seconds
-      for (var i = 2; i < 8; ++i) {
-        time += str[i];
-      }
+    if (time.length > 1) {
+      // If time format correct
+      time = time.slice(1); // Remove full string match value
+      time[5] = +time[0] < 12 ? "AM" : "PM"; // Set AM/PM
+      time[0] = +time[0] % 12 || 12; // Adjust hours
     }
 
-    // After time is printed
-    // cout Meridien
+    time = time.join(""); // return adjusted time or original string
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\s[AP]M)$/;
 
-    time = time + " " + meridian;
+    const match = time.match(timeRegex);
 
-    console.log(time);
+    if (match) {
+      let hours = match[1];
+      const minutes = match[2];
+      const seconds = match[3];
+      const meridian = match[4];
+
+      setHours(hours);
+      setMinutes(minutes);
+      setSeconds(seconds);
+      setMeridian(meridian);
+    }
   }
 
-  // var str = hours + ":" + minutes + ":" + seconds;
-  // convert12(str);
+  function changeTimeFormat() {
+    if (timeFormat == 24) {
+      setTimeFormat(12);
+    } else {
+      setTimeFormat(24);
+    }
+  }
 
   return (
     <div className="Clock">
-      {hours.length == 2 ? hours : `0${hours}`}:
-      {minutes.length == 2 ? minutes : `0${minutes}`}:
-      {seconds.length == 2 ? seconds : `0${seconds}`}
+      <div className="time">
+        <p>{hours}</p>:<p>{minutes}</p>
+        <div>
+          <p className="seconds">{seconds}</p>
+          {timeFormat != 24 && <p className="seconds">{meridian}</p>}
+        </div>
+      </div>
+      <div className="date">
+        {day} - {month} {date}
+      </div>
+      {/* <button
+        onClick={() => {
+          changeTimeFormat();
+        }}
+      >
+        Change
+      </button> */}
     </div>
   );
 };
