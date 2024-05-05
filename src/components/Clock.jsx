@@ -68,7 +68,11 @@ const Clock = () => {
       //   setSeconds(`0${seconds}`);
       // }
 
-      const time = dateObj.toLocaleTimeString();
+      let time = dateObj.toLocaleTimeString();
+
+      if (time.length == 10) {
+        time = `0${time}`
+      }
 
       const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\s[AP]M)$/;
 
@@ -108,6 +112,7 @@ const Clock = () => {
       setMonth(months[month]);
     }, 1000);
   };
+
 
   useEffect(() => {
     startTimer();
