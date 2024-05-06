@@ -9,7 +9,7 @@ const Clock = () => {
   const [month, setMonth] = useState("");
   const [day, setDay] = useState("");
   const [meridian, setMeridian] = useState("");
-  const [timeFormat, setTimeFormat] = useState();
+  const [viewedTimeFormat, setviewedTimeFormat] = useState(localStorage.getItem("timeFormat"));
 
   let interval = useRef();
   const daysOfWeek = [
@@ -35,6 +35,8 @@ const Clock = () => {
     "November",
     "December",
   ];
+
+  let timeFormat = 12
 
   const startTimer = () => {
     interval = setInterval(() => {
@@ -78,24 +80,28 @@ const Clock = () => {
 
       const match = time.match(timeRegex);
 
+      timeFormat = localStorage.getItem("timeFormat")
+      if (!timeFormat) {
+        timeFormat = 12;
+        localStorage.setItem("timeFormat", timeFormat);
+        setviewedTimeFormat(12)
+      }
+
       if (match) {
         let hours = match[1];
         const minutes = match[2];
         const seconds = match[3];
         const meridian = match[4];
 
-        if (timeFormat == 24) {
-          if (meridian.trim() == "AM") {
-            if (hours == "12") {
-              hours = "00";
-            }
-          }
-        }
-
-        setHours(hours);
         setMinutes(minutes);
         setSeconds(seconds);
         setMeridian(meridian);
+
+        if (timeFormat == 24) {
+          tConvert(hours, meridian)
+        } else {
+          setHours(hours);
+        }
       }
 
       const day = dateObj.getDay();
@@ -121,64 +127,50 @@ const Clock = () => {
     };
   }, []);
 
-  function tConvert(time) {
-    // Check correct time format and split into components
-    time = time
-      .toString()
-      .match(/^([01]\d|2[0-3])(:)([0-5]\d)(:[0-5]\d)?$/) || [time];
-
-    if (time.length > 1) {
-      // If time format correct
-      time = time.slice(1); // Remove full string match value
-      time[5] = +time[0] < 12 ? "AM" : "PM"; // Set AM/PM
-      time[0] = +time[0] % 12 || 12; // Adjust hours
+  function tConvert(hours, meridian) {
+    if (meridian.trim() == "AM" && hours == "12") {
+      setHours("00")
     }
-
-    time = time.join(""); // return adjusted time or original string
-    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\s[AP]M)$/;
-
-    const match = time.match(timeRegex);
-
-    if (match) {
-      let hours = match[1];
-      const minutes = match[2];
-      const seconds = match[3];
-      const meridian = match[4];
-
-      setHours(hours);
-      setMinutes(minutes);
-      setSeconds(seconds);
-      setMeridian(meridian);
+    else if (meridian.trim() == "PM" && hours != "12") {
+      setHours((Number(hours) + 12).toString());
+    } else {
+      setHours(hours)
     }
   }
 
   function changeTimeFormat() {
-    if (timeFormat == 24) {
-      setTimeFormat(12);
+    const format = localStorage.getItem("timeFormat");
+    if (format == 12) {
+      localStorage.setItem("timeFormat", 24);
+      setviewedTimeFormat(24)
     } else {
-      setTimeFormat(24);
+      localStorage.setItem("timeFormat", 12);
+      setviewedTimeFormat(12)
     }
   }
 
   return (
-    <div className="Clock">
-      <div className="time">
-        <p>{hours}</p>:<p>{minutes}</p>
-        <div>
-          <p className="seconds">{seconds}</p>
-          {timeFormat != 24 && <p className="seconds">{meridian}</p>}
+    <div>
+      <div className="Clock">
+        <div className="time">
+          <p>{hours}</p>:<p>{minutes}</p>
+          <div>
+            {viewedTimeFormat != 24 && <p className="seconds">{meridian}</p>}
+            <p className="seconds">{seconds}</p>
+          </div>
         </div>
+        <div className="date">
+          {day} - {month} {date}
+        </div>
+
       </div>
-      <div className="date">
-        {day} - {month} {date}
-      </div>
-      {/* <button
+      <div> <button
         onClick={() => {
           changeTimeFormat();
         }}
       >
         Change
-      </button> */}
+      </button></div>
     </div>
   );
 };
